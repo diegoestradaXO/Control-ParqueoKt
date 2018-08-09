@@ -1,15 +1,6 @@
-import java.io.BufferedReader
-import java.io.File
-import java.io.InputStream
-import Stage
-fun readStage(path: String): ArrayList<String>{
-    var stageList = ArrayList<String>()
-    val bufferedReader = File(path).bufferedReader()
-    val lineList = mutableListOf<String>()
-    bufferedReader.useLines { lines -> lines.forEach { lineList.add(it) } }
-    lineList.forEach { stageList.addAll((it.split(""))) }
-    return stageList
-}
+import Structure.Building
+import Structure.Stage
+
 fun main(args: Array<String>) {
     var wantsToContinue = true
     val myBuilding = Building()
@@ -38,32 +29,27 @@ fun main(args: Array<String>) {
                             println("Ingrese el nombre del nivel:")
                             val stageName = readLine()!!.toString()
                             println("Ingrese el identificador:")
-                            val stageID = readLine()!!.toInt()
+                            val stageID = readLine()!!.toString()
                             println("Ingrese el color del nivel:")
                             val stageColor = readLine()!!.toString()
                             println("Ingrese la ruta del archivo del Nivel:")
                             val stagePath = readLine()!!.toString()
-                            val checkStageName = myBuilding.stages.filter { it.name == stageName }
-                            val checkStageID = myBuilding.stages.filter { it.id == stageID }
-                            val checkStageColor = myBuilding.stages.filter { it.color == stageColor }
-                            if (checkStageName.count() > 0 || checkStageID.count() > 0 || checkStageColor.count() > 0) {
-                                println("Lo siento, alguno de los datos que ingresaste ya existe...")
+                            if (myBuilding.checkStageColor(stageColor) != null || myBuilding.checkStageID(stageID) != null || myBuilding.checkStagName(stageName) != null) {
+                                println("Lo siento, pero ya existe un nivel con alguno de los datos que ingresaste")
+                            }
+                            var stageToCreate = Stage(name = stageName, id = stageID, color = stageColor, path = stagePath)
+                            if (!stageToCreate.createMap(stageToCreate.readMap(stagePath))) {
+                                println("El mapa que ingresaste contiene parqueos iguales, asegurate de que todos sean diferentes")
                             } else {
-                                val stageList = readStage(stagePath)
-                                val parkingLotList = stageList.filter { it != " " && it != "*" && it != "" }
-                                println(parkingLotList)
-                                if (parkingLotList.distinct().count() < parkingLotList.count()) {
-                                    println("Asegurate de que cada parqueo tenga un id diferente!")
-                                } else {
-                                    val newStage = Stage(name = stageName, id = stageID, color = stageColor, path = stagePath)
-                                    myBuilding.addStage(newStage)
-                                    newStage.addParkingLots(stageList)
-                                    println("Nivel creado exitosamente")
-                                }
+                                myBuilding.addStage(stageToCreate)
+                                println("Felicidades, el nivel ha sido creado satisfactoriamente")
                             }
                         }
+
+
+
                         if (option2 == 2) {
-                            val id = readLine()!!.toInt()
+                            val id = readLine()!!.toString()
                             val deleting = myBuilding.deleteStage(id)
                             if (deleting){
                                 println("Nivel borrado con exito...")
@@ -72,17 +58,65 @@ fun main(args: Array<String>) {
                             }
                         }
                         if (option2 == 3) {
+                            println(myBuilding)
                         }
                         if (option2 == 4) {
                             admin = !admin
                         }
-                    } else {
+                        } else {
                         println("Opcion invalida...Intentelo de nuevo...")
                     }
-                } while (admin)
+                }while (admin)
             }
             if(option1 == 2){
-                println("kkk")
+                println("Bienvenido conductor")
+                var conductor = true
+                do{
+                    println("""
+                    Escoja una opcion:
+                    1.Ingresar placa
+                    2.Salir:
+                """.trimIndent())
+                    val option3 = readLine()!!.toInt()
+                    if (option3 > 0 && option3 < 3) {
+                        if (option3 == 1){
+                            val licensePlate = readLine().toString()
+                            if (myBuilding.getLevelbyPlate(plate = licensePlate)!=null){
+                                println(myBuilding.getLevelbyPlate(licensePlate))
+                                println(myBuilding.getLevelbyPlate(licensePlate)!!.stageToString())
+                            }else{
+                                for(stage in myBuilding.getAvailableStages()){
+                                    println("Estos son los niveles con espacios disponibles...")
+                                    println(stage)
+                                }
+                                println("Escoja el nivel en el que desea parquear su vehiculo(Ingresar el id)")
+                                val stageId = readLine()!!.toString()
+                                val stageChosed = myBuilding.checkStageID(stageId)
+                                if (stageChosed != null){
+                                    println(stageChosed.stageToString())
+                                    println("Ingrese el nombre del parqueo en el que desea estacionarse: ")
+                                    val parkingLotId = readLine()!!.toString()
+                                    if (stageChosed.getParkingLot(parkingLotId) != null){
+                                        val mypark = stageChosed.getParkingLot(parkingLotId)
+                                        mypark.park(plate = licensePlate)
+
+
+                                    }
+
+                                }else{
+                                    println("Lo siento, pero el id que ingresaste no concuerda con ningun parqueo disponible..")
+                                }
+                            }
+
+
+                        }
+                        if (option3 ==2 ){
+                            conductor = !conductor
+                        }
+                    }
+                    else{
+                        println("Opcion invalida, intentalo de nuevo")}
+                }while (conductor)
             }
             if(option1 == 3){
                  wantsToContinue = false
